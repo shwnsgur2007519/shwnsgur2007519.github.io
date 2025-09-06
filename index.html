@@ -1,1 +1,589 @@
-<strong>hello world!!</strong>
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>표창 키우기 업그레이드 최적화 v2</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --muted: #94a3b8;
+        --text: #e5e7eb;
+        --accent: #22d3ee;
+        --good: #22c55e;
+        --bad: #ef4444;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto,
+          Apple SD Gothic Neo, Noto Sans KR, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin: 16px 0 8px;
+      }
+      h2 {
+        font-size: 1.2rem;
+        margin: 24px 0 8px;
+        color: var(--accent);
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid #1f2937;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+      label {
+        display: block;
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin: 8px 0 6px;
+      }
+      input[type='number'],
+      input[type='text'],
+      select {
+        width: 100%;
+        background: #0b1020;
+        color: var(--text);
+        border: 1px solid #263244;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 1rem;
+        box-sizing: border-box;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .row3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 520px) {
+        .row,
+        .row3 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .btn {
+        appearance: none;
+        border: 0;
+        background: linear-gradient(135deg, #22d3ee, #38bdf8);
+        color: #001018;
+        font-weight: 700;
+        padding: 12px 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        margin-top: 12px;
+      }
+      .btn-outline {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      th,
+      td {
+        border-bottom: 1px solid #243042;
+        padding: 10px;
+        text-align: right;
+        word-break: break-word;
+        white-space: normal; /* 한 줄 고정 방지 */
+        vertical-align: top;
+      }
+
+
+      /* 모바일 화면일 때 글자 크기 줄이기 */
+      @media (max-width: 520px) {
+        table {
+          font-size: 0.75rem;
+        }
+      }
+      th:first-child,
+      td:first-child {
+        text-align: center;
+      }
+      .tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+      }
+      .good {
+        background: rgba(34, 197, 94, 0.16);
+        color: #86efac;
+        border: 1px solid rgba(34, 197, 94, 0.4);
+      }
+      .bad {
+        background: rgba(239, 68, 68, 0.16);
+        color: #fecaca;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+      }
+      .note {
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .hr {
+        height: 1px;
+        background: #1f2937;
+        margin: 16px 0;
+      }
+      .table-scroll {
+        max-height: 360px;
+        overflow: auto;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+      }
+      .table-scroll table {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>표창 키우기 업그레이드 최적화</h1>
+
+      <div class="grid">
+        <section class="card">
+          <h2>① 현재 상태 입력</h2>
+          <div class="row">
+            <div>
+              <label>현재 일반 공격력(%)</label>
+              <input
+                id="gaNow"
+                type="number"
+                inputmode="decimal"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <label>현재 버닝 레벨</label>
+              <input
+                id="burnLv"
+                type="number"
+                inputmode="numeric"
+                step="1"
+                min="0"
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>다이아 증폭 레벨</label>
+              <input
+              id="diaAmpLv"
+              type="number"
+              inputmode="numeric"
+              step="1"
+              min="0"
+              />
+            </div>
+            <div
+              class="row"
+              style="
+                grid-template-columns: auto 1fr;
+                align-items: center;
+                gap: 12px;
+                margin-top: 8px;
+              "
+            >
+              <input
+                id="hasStone"
+                type="checkbox"
+                style="transform: scale(1.2)"
+              />
+              <label for="hasStone" style="margin: 0">버닝 스톤 보유</label>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>② 버닝 vs 루비 강화</h2>
+          <div class="row">
+            <div>
+              <label>버닝 비교 최대 구매 개수</label>
+              <input
+                id="burnCompareMax"
+                type="number"
+                inputmode="numeric"
+                step="1"
+                min="1"
+                value="100"
+              />
+            </div>
+          </div>
+          <button class="btn" id="btnCalcBurn">버닝 vs 루비 강화 계산</button>
+          <div id="burnSummary" class="note" style="margin-top: 8px"></div>
+          <div id="burnTableWrap" class="table-scroll"></div>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top: 16px">
+        <h2>③ 다이아 공격력 vs 고급 유물</h2>
+        <div class="row3">
+          <div>
+            <label>현재 고급 유물 가격 (다이아)</label>
+            <input
+              id="relicPriceNow"
+              type="number"
+              inputmode="numeric"
+              step="1"
+              min="0"
+            />
+          </div>
+          <div>
+            <label>다이아 증폭 다음 레벨 가격</label>
+            <input
+              id="diaNextCost"
+              type="text"
+              value="레벨을 입력하면 자동 계산"
+              disabled
+            />
+          </div>
+          <div>
+            <label>고급 유물 다음 가격</label>
+            <input
+              id="relicNextCost"
+              type="text"
+              value="현재 유물 가격 입력 시 자동 계산"
+              disabled
+            />
+          </div>
+        </div>
+        <button class="btn" id="btnCalcDia">다이아 vs 유물 계산</button>
+        <div id="diaResult" style="margin-top: 12px"></div>
+      </section>
+
+      <details class="card" style="margin-top: 16px">
+        <summary><b>4. 수식 계산 규칙 (전문가용 세부)</b></summary>
+        <div style="font-size: 0.95rem; line-height: 1.6">
+          <ul>
+            <li>
+              같은 종류(일반/버닝/다이아)는 <b>덧셈</b>, 서로 다른 종류는
+              <b>곱셈</b>.
+            </li>
+            <li>
+              총 배율 M = (1 + G) × (1 + B) × (1 + D). 여기서 G,B,D는 각각
+              일반/버닝/다이아 공격력의 <b>소수</b> 표현(예: 1200% → 12.0).
+            </li>
+            <li>
+              현재값: G₀ = 입력 일반%, B₀ = (버닝레벨 × 0.1%), D₀ = (다이아 증폭
+              레벨 × 1%).
+            </li>
+            <li>
+              버닝 n회 구매 평균 증가(레벨업 불연속 요소를 N개당 +1레벨로
+              평균화):
+              <ul>
+                <li>필요개수 N(입력): 버닝% 증분 = n × (0.1% / N).</li>
+                <li>버닝 스톤 보유 시 일반% 증분 = n × (380% / N).</li>
+                <li>
+                  루비 비용: 시작 0루비, 구매마다 +20. 오늘 이미 산 개수를 m이라
+                  하면 n회 추가 구매 비용 R = 20 × Σ<sub>i=m</sub
+                  ><sup>m+n-1</sup> i = 10·n·(2m + n − 1).
+                </li>
+                <li>
+                  동일 루비로 루비 강화 시 일반% 증분 = (R/10)% = R/1000 (소수).
+                </li>
+              </ul>
+            </li>
+            <li>
+              비교 지표: 증가율(%) = (M′/M − 1)×100. 표기 시 반올림 없이 표시.
+            </li>
+            <li>
+              다이아 증폭 다음 레벨 비용: C<sub>amp</sub> = 1,000,000 + (현재
+              레벨 × 100,000).
+            </li>
+            <li>
+              고급 유물 가격: P = c²·100 ⇒ c = √(P/100). 다음 가격 추정 C<sub
+                >relic</sub
+              >
+              = (c+1)²·100.
+            </li>
+            <li>
+              다이아 vs 유물 비교는 각자 <b>다음 1회</b> 구매로 인한 증가율과
+              (증가율/비용) 효율을 비교.
+            </li>
+          </ul>
+        </div>
+      </details>
+
+      <p class="note" style="margin-top: 16px">
+        저장: 입력값은 브라우저 LocalStorage에 자동 저장되어 다음 접속 시
+        복원됩니다.
+      </p>
+    </div>
+
+    <script>
+      // ===== 유틸 =====
+      const $ = (id) => document.getElementById(id);
+      const toDec = (pct) => Number(pct || 0) / 100; // % → 소수
+      const fmtPct = (x) => {
+        if (!isFinite(x)) return '—';
+        const v = Math.floor(x * 10000) / 10000; // 반올림 없이 표시
+        return v.toLocaleString(undefined, { maximumFractionDigits: 4 }) + '%';
+      };
+      const fmtInt = (n) => Math.round(Number(n || 0)).toLocaleString();
+
+      // ===== 저장/복원 =====
+      const STORAGE_KEY = 'shuriken_opt_state_v2';
+      const fields = [
+        'gaNow',
+        'burnLv',
+        'hasStone',
+        'diaAmpLv',
+        'burnCompareMax',
+        'relicPriceNow',
+      ];
+
+      function saveState() {
+        const state = Object.fromEntries(
+          fields.map((k) => {
+            let v = $(k).type === 'checkbox' ? $(k).checked : $(k).value;
+            return [k, v];
+          })
+        );
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function loadState() {
+        try {
+          const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          fields.forEach((k) => {
+            if (s[k] !== undefined) {
+              if ($(k).type === 'checkbox') $(k).checked = !!s[k];
+              else $(k).value = s[k];
+            }
+          });
+          updateDiaCosts();
+        } catch (e) {
+          /*noop*/
+        }
+      }
+
+      fields.forEach((k) => {
+        const el = $(k);
+        el &&
+          el.addEventListener(
+            el.type === 'checkbox' ? 'change' : 'input',
+            () => {
+              saveState();
+              if (k === 'diaAmpLv' || k === 'relicPriceNow') updateDiaCosts();
+            }
+          );
+      });
+
+      // ===== 기본 배율 =====
+      function baseMultipliers() {
+        const G0 = toDec($('gaNow').value);
+        const B0 = Number($('burnLv').value || 0) * 0.001; // 0.1% = 0.001
+        const D0 = Number($('diaAmpLv').value || 0) * 0.01;
+        return { G0, B0, D0, M0: (1 + G0) * (1 + B0) * (1 + D0) };
+      }
+
+      // ===== 버닝 vs 루비 =====
+      function calcBurnVsRuby() {
+        const { G0, B0, D0, M0 } = baseMultipliers();
+        const m = 0;
+        const burnNeed = $('burnLv').value>=1000? 20 : 10;
+        const N = Math.max(1, Math.floor(Number(burnNeed || 10)));
+        const maxBuy = Math.max(
+          1,
+          Math.floor(Number($('burnCompareMax').value || 10))
+        );
+        const stone = $('hasStone').checked;
+
+        const start = 1; // max(1, 최대-20)
+
+        let html =
+          '<table><thead><tr><th>구매</th><th>가격</th><th>버닝</th><th>루비 강화</th><th>추천</th></tr></thead><tbody>';
+
+        let bestUntil = 0; // 전체 기준
+
+        for (let n = 1; n <= maxBuy; n++) {
+          const R = 10 * (n-1) * (2 * m + n - 2); // 루비 비용
+          const dB = (n-1) * (0.001 / N); // 버닝% 평균 증가
+          const dG = stone ? (n-1) * (3.8 / N) : 0; // 스톤 보유 시 일반% 증가
+
+          const dR = 20 * n; // 루비 비용
+          const ddB = (0.001 / N); // 버닝% 평균 증가
+          const ddG = stone ? (3.8 / N) : 0; // 스톤 보유 시 일반% 증가
+
+          const M_burn = (1 + G0 + dG + ddG) * (1 + B0 + dB + ddB) * (1 + D0);
+          const M_burn_bef = (1 + G0 + dG) * (1 + B0 + dB) * (1 + D0);
+          const incBurn = (M_burn / M_burn_bef - 1) * 100;
+
+          const dG_ruby = dR / 1000; // 같은 루비로 루비 강화
+          const dG_ruby_bef = R / 1000; // 같은 루비로 루비 강화
+          const M_ruby = (1 + G0 + dG_ruby + dG_ruby_bef) * (1 + B0) * (1 + D0);
+          const M_ruby_bef = (1 + G0 + dG_ruby_bef) * (1 + B0) * (1 + D0);
+          const incRuby = (M_ruby / M_ruby_bef - 1) * 100;
+
+          const burnBetter = incBurn > incRuby;
+          if (burnBetter) bestUntil = n;
+
+          if (n >= start) {
+            html += `<tr>
+        <td>${n}</td>
+        <td>${fmtInt(dR)}</td>
+        <td>${fmtPct(incBurn)}</td>
+        <td>${fmtPct(incRuby)}</td>
+        <td>${
+          burnBetter
+            ? '<span class="tag good">버닝</span>'
+            : '<span class="tag bad">루비</span>'
+        }</td>
+      </tr>`;
+          }
+        }
+        html += '</tbody></table>';
+
+        $('burnTableWrap').innerHTML = html;
+
+        const summary =
+          bestUntil > 0
+            ? `버닝은 <b>${bestUntil}회까지</b> 루비 강화보다 유리합니다.`
+            : '이번 조건에서는 루비 강화가 더 유리합니다.';
+        $('burnSummary').innerHTML = summary;
+      }
+
+      // ===== 다이아 vs 유물 =====
+      function updateDiaCosts() {
+        const lv = Math.max(0, Math.floor(Number($('diaAmpLv').value || 0)));
+        const nextAmpCost = 1_000_000 + lv * 100_000;
+        $('diaNextCost').value = isFinite(nextAmpCost)
+          ? nextAmpCost.toLocaleString()
+          : '-';
+
+        const pNow = Number($('relicPriceNow').value || 0);
+        if (pNow > 0) {
+          const c = Math.sqrt(pNow / 100);
+          const next = Math.pow(c + 1, 2) * 100;
+          $('relicNextCost').value = isFinite(next)
+            ? Math.round(next).toLocaleString()
+            : '-';
+        } else {
+          $('relicNextCost').value = '현재 유물 가격 입력 시 자동 계산';
+        }
+      }
+
+      function calcDiaVsRelic() {
+        const { G0, B0, D0, M0 } = baseMultipliers();
+        const lv = Math.max(0, Math.floor(Number($('diaAmpLv').value || 0)));
+        const nextAmpCost = 1_000_000 + lv * 100_000; // 다이아
+
+        const pNow = Number($('relicPriceNow').value || 0);
+        const c = Math.sqrt(pNow / 100);
+        const nextRelicCost = Math.pow(c + 1, 2) * 100; // 다이아
+
+        // 증폭 1레벨: D + 0.01
+        const M_amp = (1 + G0) * (1 + B0) * (1 + D0 + 0.01);
+        const incAmp = (M_amp / M0 - 1) * 100;
+
+        // 유물 1회: G + 30.0 (== 3000%)
+        const M_relic = (1 + G0 + 30.0) * (1 + B0) * (1 + D0);
+        const incRelic = (M_relic / M0 - 1) * 100;
+
+        const effAmp = incAmp / nextAmpCost;
+        const effRelic = incRelic / nextRelicCost;
+
+        const better = effAmp > effRelic ? '다이아 증폭' : '고급 유물';
+        const reason =
+          effAmp > effRelic
+            ? `다음 증폭 비용 ${nextAmpCost.toLocaleString()} 대비 증가율 ${fmtPct(
+                incAmp
+              )}`
+            : `다음 유물 비용 ${Math.round(
+                nextRelicCost
+              ).toLocaleString()} 대비 증가율 ${fmtPct(incRelic)}`;
+
+        $('diaResult').innerHTML = `
+    <div class="row">
+      <div class="card" style="background:#0b1020">
+        <div class="muted">다이아 증폭 (다음 1레벨)</div>
+        <div style="font-size:1.1rem"><b>증가율:</b> ${fmtPct(incAmp)}</div>
+        <div class="muted">비용: ${nextAmpCost.toLocaleString()} 다이아 · 효율: ${effAmp.toExponential(
+          3
+        )}</div>
+      </div>
+      <div class="card" style="background:#0b1020">
+        <div class="muted">고급 유물 (1회)</div>
+        <div style="font-size:1.1rem"><b>증가율:</b> ${fmtPct(incRelic)}</div>
+        <div class="muted">비용(예상): ${Math.round(
+          nextRelicCost
+        ).toLocaleString()} 다이아 · 효율: ${effRelic.toExponential(3)}</div>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <span class="tag ${
+        effAmp > effRelic ? 'good' : 'bad'
+      }">추천: ${better}</span>
+      <span class="note" style="margin-left:8px">(${reason})</span>
+    </div>
+  `;
+      }
+
+      // ===== 이벤트 바인딩 =====
+      $('btnCalcBurn').addEventListener('click', calcBurnVsRuby);
+      $('btnCalcDia').addEventListener('click', calcDiaVsRelic);
+
+      // ===== 초기화 =====
+        window.addEventListener('keydown', (e) => {
+          loadState();
+          if (e.key === 'Enter') {
+            const active = document.activeElement;
+
+            if (
+              active &&
+              (active.tagName === 'INPUT' || active.tagName === 'SELECT')
+            ) {
+              e.preventDefault();
+
+              // 입력 중인 input의 id에 따라 적절한 버튼 클릭
+              const id = active.id;
+
+              if (
+                ['burnLv', 'burnCompareMax'].includes(id)
+              ) {
+                // 버닝 관련 입력
+                $('btnCalcBurn').click();
+              } else if (
+                ['diaAmpLv', 'relicPriceNow'].includes(id)
+              ) {
+                // 다이아/유물 관련 입력
+                $('btnCalcDia').click();
+              }
+            }
+          }
+        });
+
+    </script>
+  </body>
+</html>
