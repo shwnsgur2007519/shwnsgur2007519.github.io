@@ -412,7 +412,7 @@
       function calcBurnVsRuby() {
         const { G0, B0, D0, M0 } = baseMultipliers();
         const m = 0;
-        const burnNeed = $('burnLv').value>=1000? 20 : 10;
+        const burnNeed = $('burnLv').value>=1000? 20+10*Math.floor(($('burnLv').value-1000)/100) : 10;
         const N = Math.max(1, Math.floor(Number(burnNeed || 10)));
         const maxBuy = Math.max(
           1,
