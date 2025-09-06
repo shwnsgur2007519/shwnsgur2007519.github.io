@@ -555,8 +555,9 @@
       $('btnCalcDia').addEventListener('click', calcDiaVsRelic);
 
       // ===== 초기화 =====
+      window.addEventListener('DOMContentLoaded', () => {
+        loadState();
         window.addEventListener('keydown', (e) => {
-          loadState();
           if (e.key === 'Enter') {
             const active = document.activeElement;
 
@@ -584,6 +585,7 @@
           }
         });
 
+      });
     </script>
   </body>
 </html>
