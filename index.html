@@ -245,9 +245,58 @@
           <div id="burnTableWrap" class="table-scroll"></div>
         </section>
       </div>
+      <!-- ④ 제작술 가격 예측 -->
+      <section class="card" style="margin-top: 16px">
+        <h2>③ 제작술 가격 예측</h2>
+        <div class="row">
+          <div>
+            <label>시작 제작술 단계</label>
+            <input
+            id="craftStepStart"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            />
+          </div>
+          <div>
+            <label>시작 제작술 레벨</label>
+            <input
+              id="craftLvStart"
+              type="number"
+              inputmode="numeric"
+              min="0"
+            />
+          </div>
+          <div>
+            <label>끝 제작술 단계</label>
+            <input
+            id="craftStepEnd"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            />
+          </div>
+          <div>
+            <label>끝 제작술 레벨</label>
+            <input
+              id="craftLvEnd"
+              type="number"
+              inputmode="numeric"
+              min="0"
+            />
+          </div>
+        </div>
+
+        <!-- 추후 JS 계산용 버튼/표시 영역 -->
+        <button class="btn" id="btnCalcCraft" style="margin-top: 12px">
+          제작술 가격 예측
+        </button>
+        <div id="craftSummary" class="note" style="margin-top: 8px"></div>
+        <div id="craftTableWrap" class="table-scroll"></div>
+      </section>
 
       <section class="card" style="margin-top: 16px">
-        <h2>③ 다이아 공격력 vs 고급 유물</h2>
+        <h2>④ 다이아 공격력 vs 고급 유물</h2>
         <div class="row3">
           <div>
             <label>현재 고급 유물 가격 (다이아)</label>
@@ -361,6 +410,10 @@
         'diaAmpLv',
         'burnCompareMax',
         'relicPriceNow',
+        'craftStepStart',
+        'craftStepEnd',
+        'craftLvStart',
+        'craftLvEnd',
       ];
 
       function saveState() {
@@ -473,7 +526,67 @@
             : '이번 조건에서는 루비 강화가 더 유리합니다.';
         $('burnSummary').innerHTML = summary;
       }
+      // ===== 버닝 가격 계산 =====
+      function calcCraftPrice(stepStart, lvStart, stepEnd, lvEnd) {
+        // 유효성 검사
+        const inRange = (v, a, b) =>  v >= a && v <= b;
+        if (
+          !inRange(stepStart, 1, 72) || !inRange(stepEnd, 1, 72) ||
+          !inRange(lvStart, 0, 100) || !inRange(lvEnd, 0, 100)
+        ) {
+          throw new Error('범위를 벗어난 입력입니다. (단계 1~72, 레벨 0~100)');
+        }
+        if(!(stepStart && stepEnd && lvStart && lvEnd)) throw new Error('범위를 입력하세요');
+        if(stepStart > stepEnd || (stepStart === stepEnd && lvStart > lvEnd)) throw new Error('올바른 범위를 입력하세요');
 
+        let total = 0;
+        const BaseCost = [0,2,6,9,12,15,18,21,24,27,30,35.2,38.4,41.6,44.8,48,51.2,54.4,57.6,60.8,64,71.4,74.8,78.2,81.6,85,88.4,91.8,95.2,98.6,102,111.6,115.2,118.8,122.4,126,129.6,133.2,136.8,140.4,144,155.8,159.6,163.4,167.2,171,174.8,178.6,182.4,186.2,190,204,208,212,216,220,224,228,232,236,240,256.2,260.4,264.6,268.8,273,277.2,281.4,285.6,289.8,294,312.4,316.8,321.2,325.6,330,349.6,354.2,358.8,363.4,384,388.8,393.6,398.4,420,425,430,452.4,457.6,462.8,468,473.2,496.8,502.2,507.6,532,537.6,562.6,568.4,574.2,580];
+        const scale = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,72.5,150,232.5,320,577.5,850,1137.5,1440,1757.5,2185,2632.5,3100,3690,4200,4837.5,5610,6412.5,7245,8107.5,8880,9677.5,10625,11602.5,12480,13515,14580,15675,16800,17955,19140,20355,24000,25925,27925,29925,32160,33312.5,34650,36012.5,37400,39675,42000,44375,46800];
+
+        for (let s = stepStart; s <= stepEnd; s++) {
+          // 해당 스텝에서 시작/끝 레벨 결정
+          // - 시작 스텝: 현재 lvStart에서 시작
+          // - 중간 스텝: 반드시 1레벨에서 시작
+          // - 끝 스텝: lvEnd에서 멈춤, 그 외(중간)는 100레벨까지
+          const lvFrom = (s === stepStart) ? lvStart : 0;
+          const lvTo   = (s === stepEnd)   ? lvEnd   : 100;
+          
+          // lvFrom → lvTo 로 올라가는 과정에서
+          // j-1 → j 비용을 모두 합산 (j는 lvFrom+1 부터 lvTo)
+          for (let j = lvFrom + 1; j <= lvTo; j++) {
+            const base = BaseCost[j];    // j-1 → j 비용의 BaseCost
+            const k    = scale[s];       // 스텝 스케일
+            const price = Math.round(base * k);
+            total += price;
+          }
+        }
+        return total;
+      }
+
+      function calcCraftCostRange(){
+        stepStart = parseInt($('craftStepStart').value);
+        stepEnd = parseInt($('craftStepEnd').value);
+        lvStart = parseInt($('craftLvStart').value);
+        lvEnd = parseInt($('craftLvEnd').value);
+        try{
+          const cost = calcCraftPrice(stepStart, lvStart, stepEnd, lvEnd);
+          $('craftSummary').innerHTML = `
+            <div class="card" style="background:#0b1020; text-align:center; padding:16px;">
+              <div class="muted" style="margin-bottom:8px;">총 필요 비용</div>
+              <div style="font-size:1.4rem; font-weight:bold; color:#22d3ee;">
+                ${cost.toLocaleString()} 표창 조각
+              </div>
+              <div class="note" style="margin-top:6px; font-size:0.9rem;">
+                시작 단계: <b>${stepStart}</b>, 레벨: <b>${lvStart}</b> → 
+                목표 단계: <b>${stepEnd}</b>, 레벨: <b>${lvEnd}</b>
+              </div>
+            </div>
+          `;
+        }
+        catch(e){
+          $('craftSummary').innerHTML = e.message;
+        }
+      }
       // ===== 다이아 vs 유물 =====
       function updateDiaCosts() {
         const lv = Math.max(0, Math.floor(Number($('diaAmpLv').value || 0)));
@@ -553,6 +666,7 @@
       // ===== 이벤트 바인딩 =====
       $('btnCalcBurn').addEventListener('click', calcBurnVsRuby);
       $('btnCalcDia').addEventListener('click', calcDiaVsRelic);
+      $('btnCalcCraft').addEventListener('click', calcCraftCostRange);
 
       // ===== 초기화 =====
       window.addEventListener('DOMContentLoaded', () => {
@@ -580,6 +694,10 @@
               ) {
                 // 다이아/유물 관련 입력
                 $('btnCalcDia').click();
+              } else if(
+                ['craftStepStart', 'craftStepEnd', 'craftLvStart', 'craftLvEnd'].includes(id)
+              ) {
+                $('btnCalcCraft').click();
               }
             }
           }
