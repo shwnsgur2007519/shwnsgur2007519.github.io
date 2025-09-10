@@ -330,6 +330,77 @@
         <button class="btn" id="btnCalcDia">다이아 vs 유물 계산</button>
         <div id="diaResult" style="margin-top: 12px"></div>
       </section>
+      <section class="card" style="margin-top: 16px">
+        <h2>⑤ 표창 삭제</h2>
+
+        <div class="row3">
+          <div>
+            <label>현재 제작술 표창 단계</label>
+            <input
+              id="delStep"
+              type="number"
+              inputmode="numeric"
+              step="1"
+              min="1"
+              max="72"
+              placeholder="1 ~ 72"
+            />
+          </div>
+          <div>
+            <label>현재 레벨</label>
+            <input
+              id="delLevel"
+              type="number"
+              inputmode="numeric"
+              step="1"
+              min="1"
+              max="100"
+              placeholder="1 ~ 100"
+            />
+          </div>
+          <div>
+            <label>승급 능력 제작술 확률 증가(%)</label>
+            <input
+              id="craftRateInc"
+              type="number"
+              inputmode="float"
+              step="0.1"
+              min="0"
+              max="10"
+              value="10"
+              placeholder="0 ~ 10 (기본 10)"
+            />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <div>
+            <label>헤이스트 링(유물) 보유 개수</label>
+            <input
+              id="hasteRingCount"
+              type="number"
+              inputmode="numeric"
+              step="1"
+              min="0"
+              max="25"
+              value="25"
+              placeholder="0 ~ 25 (기본 25)"
+            />
+          </div>
+          <div>
+            <!-- 필요 시 여유 공간 / 추후 옵션 확장용 -->
+            <label class="muted"> </label>
+            <div class="note">※ 최대 25개까지 반영됩니다.</div>
+          </div>
+        </div>
+
+        <button class="btn" id="btnCalcDeleteOpt" style="margin-top: 12px">
+          삭제 최적화 계산
+        </button>
+
+        <div id="deleteSummary" class="note" style="margin-top: 8px"></div>
+        <div id="deleteTableWrap" class="table-scroll"></div>
+      </section>
 
       <details class="card" style="margin-top: 16px">
         <summary><b>4. 수식 계산 규칙 (전문가용 세부)</b></summary>
@@ -414,6 +485,10 @@
         'craftStepEnd',
         'craftLvStart',
         'craftLvEnd',
+        'delStep',
+        'delLevel',
+        'craftRateInc',
+        'hasteRingCount',
       ];
 
       function saveState() {
@@ -662,11 +737,63 @@
     </div>
   `;
       }
+      // ===== 표창 삭제 =====
+      function calcDeleteOptimization(step, level, rate, rings) {
+        const p = (level == 0? 0: 0.1+0.002*level) + rate/100 + rings/25*0.1;
+        const q = 0.3 + rate/100 + rings/25*0.1;
+        const e = Math.log2(p+(1-p)*q/(1+q));
+        console.log(p,q,e);
+        return Math.floor(step+1+e);
+      }
+      function renderDeleteOptimization() {
+        const step  = parseInt($('delStep').value);
+        const level = parseInt($('delLevel').value);
+        const rate  = parseFloat($('craftRateInc')?.value ?? '');
+        const rings = parseInt($('hasteRingCount').value);
+        
+        // 입력값 검증
+        let error = '';
+        if (!(Number.isInteger(step) && step >= 1 && step <= 72)) {
+          error = '제작술 표창 단계는 1~72 사이의 정수여야 합니다.';
+        } else if (!(Number.isInteger(level) && level >= 1 && level <= 100)) {
+          error = '레벨은 1~100 사이의 정수여야 합니다.';
+        } else if (!isFinite(rate) || rate < 0 || rate > 10) {
+          error = '제작술 확률 증가는 0~10 사이의 실수여야 합니다.';
+        } else if (!(Number.isInteger(rings) && rings >= 0 && rings <= 25)) {
+          error = '헤이스트 링 보유 개수는 0~25 사이의 정수여야 합니다.';
+        }
+
+        if (error) {
+          $('deleteSummary').innerHTML = `
+            <div class="card" style="background:#1a0f12; border-color:#451a1a; padding:12px;">
+              <span class="tag bad">입력 오류</span>
+              <div style="margin-top:8px">${error}</div>
+            </div>
+          `;
+          $('deleteTableWrap').innerHTML = '';
+          return;
+        }
+
+        // 계산 호출
+        const bestStep = calcDeleteOptimization(step, level, rate, rings);
+
+        // 최적 단계 결과만 출력
+        $('deleteSummary').innerHTML = `
+          <div class="card" style="background:#0b1020; padding:12px; text-align:center;">
+            <div class="muted">최적 삭제 단계</div>
+            <div style="margin-top:6px; font-size:1.4rem; font-weight:bold; color:#22d3ee;">
+              ${bestStep} 단계 표창을 삭제
+            </div>
+          </div>
+        `;
+        $('deleteTableWrap').innerHTML = '';
+      }
 
       // ===== 이벤트 바인딩 =====
       $('btnCalcBurn').addEventListener('click', calcBurnVsRuby);
       $('btnCalcDia').addEventListener('click', calcDiaVsRelic);
       $('btnCalcCraft').addEventListener('click', calcCraftCostRange);
+      $('btnCalcDeleteOpt')?.addEventListener('click', renderDeleteOptimization);
 
       // ===== 초기화 =====
       window.addEventListener('DOMContentLoaded', () => {
@@ -698,6 +825,8 @@
                 ['craftStepStart', 'craftStepEnd', 'craftLvStart', 'craftLvEnd'].includes(id)
               ) {
                 $('btnCalcCraft').click();
+              } else if (['delStep', 'delLevel', 'craftRateInc', 'hasteRingCount'].includes(id)) {
+                $('btnCalcDeleteOpt')?.click();
               }
             }
           }
